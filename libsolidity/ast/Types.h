@@ -347,6 +347,10 @@ public:
 
 	StateMutability stateMutability(void) const { return m_stateMutability; }
 
+	/// @returns the argument @a _type itself, if it is not an address, and a copy of @a _type modified
+	/// to use the state mutability @a _stateMutability, if it is an address.
+	static TypePointer copyForMutabilityIfAddress(StateMutability _stateMutability, TypePointer const& _type);
+
 private:
 	StateMutability m_stateMutability;
 };

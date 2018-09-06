@@ -514,6 +514,14 @@ bool AddressType::operator==(Type const& _other) const
 	return other.m_stateMutability == m_stateMutability;
 }
 
+TypePointer AddressType::copyForMutabilityIfAddress(StateMutability _stateMutability, TypePointer const& _type)
+{
+	if (auto const* addressType = dynamic_cast<AddressType const*>(_type.get()))
+		if (addressType->stateMutability() != _stateMutability)
+			return make_shared<AddressType>(_stateMutability);
+	return _type;
+}
+
 MemberList::MemberMap AddressType::nativeMembers(ContractDefinition const*) const
 {
 	MemberList::MemberMap members = {

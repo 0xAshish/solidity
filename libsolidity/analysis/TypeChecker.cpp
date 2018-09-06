@@ -571,6 +571,8 @@ TypePointers TypeChecker::typeCheckABIDecodeAndRetrieveReturnType(FunctionCall c
 			// data locations. Furthermore, storage can be a little dangerous and
 			// calldata is not really implemented anyway.
 			actualType = ReferenceType::copyForLocationIfReference(DataLocation::Memory, actualType);
+			// We force address payable for address types.
+			actualType = AddressType::copyForMutabilityIfAddress(StateMutability::Payable, actualType);
 			solAssert(
 				!actualType->dataStoredIn(DataLocation::CallData) &&
 				!actualType->dataStoredIn(DataLocation::Storage),
@@ -845,7 +847,7 @@ bool TypeChecker::visit(VariableDeclaration const& _variable)
 			{
 				case StateMutability::NonPayable:
 				case StateMutability::Payable:
-					_variable.annotation().type = make_shared<AddressType>(*_variable.stateMutability());
+					_variable.annotation().type = AddressType::copyForMutabilityIfAddress(*_variable.stateMutability(), varType);
 					break;
 				default:
 					m_errorReporter.typeError(_variable.location(), "State mutability for address types must be payable or non-payable.");
@@ -1778,10 +1780,13 @@ bool TypeChecker::visit(FunctionCall const& _functionCall)
 			}
 			if (resultType->category() == Type::Category::Address)
 			{
+				bool payable = true;
 				if (auto const* contractType = dynamic_cast<ContractType const*>(argType.get()))
-					resultType = make_shared<AddressType>(contractType->isPayable() ? StateMutability::Payable : StateMutability::NonPayable);
-				else
-					resultType = make_shared<AddressType>(StateMutability::Payable);
+					payable = contractType->isPayable();
+				resultType = AddressType::copyForMutabilityIfAddress(
+					payable ? StateMutability::Payable : StateMutability::NonPayable,
+					resultType
+				);
 			}
 		}
 		_functionCall.annotation().type = resultType;
